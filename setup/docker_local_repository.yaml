@@ -1,0 +1,229 @@
+# ==========================================
+# Docker Registry 最終統合版
+# Gateway経由のHTTPS対応 + パスベースルーティング
+# ==========================================
+
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: docker-registry
+---
+# PersistentVolume
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: registry-pv
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  hostPath:
+    path: /var/lib/registry
+    type: DirectoryOrCreate
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - master  # masterノードに配置
+---
+# PersistentVolumeClaim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: registry-pvc
+  namespace: docker-registry
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: local-storage
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-registry
+  namespace: docker-registry
+  labels:
+    app: docker-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docker-registry
+  template:
+    metadata:
+      labels:
+        app: docker-registry
+    spec:
+      # masterノードに固定
+      nodeSelector:
+        kubernetes.io/hostname: master  
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: registry
+        image: registry:2
+        ports:
+        - containerPort: 5000
+        env:
+        - name: REGISTRY_LOG_LEVEL
+          value: "warn"
+        - name: REGISTRY_HTTP_SECRET
+          value: "cluster-registry-secret"
+        - name: REGISTRY_STORAGE_DELETE_ENABLED
+          value: "true"
+        - name: REGISTRY_HTTP_ADDR
+          value: "0.0.0.0:5000"
+        - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin
+          value: "['*']"
+        - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods
+          value: "['HEAD','GET','OPTIONS','DELETE','POST','PUT']"
+        - name: REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers
+          value: "['Authorization','Accept','Cache-Control','Content-Type']"
+        volumeMounts:
+        - name: registry-storage
+          mountPath: /var/lib/registry
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /v2/_catalog
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /v2/_catalog
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: registry-storage
+        persistentVolumeClaim:
+          claimName: registry-pvc
+---
+# Service (NodePort) - 直接アクセス用
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-registry
+  namespace: docker-registry
+  labels:
+    app: docker-registry
+spec:
+  selector:
+    app: docker-registry
+  ports:
+  - name: registry-port
+    port: 5000
+    targetPort: 5000
+    nodePort: 30500  # 直接アクセス用
+  type: NodePort
+---
+# Service (ClusterIP) - Gateway経由用
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-registry-gateway
+  namespace: docker-registry
+  labels:
+    app: docker-registry
+spec:
+  selector:
+    app: docker-registry
+  ports:
+  - name: http
+    port: 80
+    targetPort: 5000
+  type: ClusterIP
+---
+# HTTPRoute - パスベースルーティング
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: docker-registry-route
+  namespace: docker-registry
+spec:
+  parentRefs:
+  - name: shared-gateway
+    namespace: default
+  hostnames:
+  - "yu-min.k8s.local"
+  rules:
+  # Registry API v2 エンドポイント
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /registry/v2/  # /registry/v2/ で始まるパス
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /v2/  # /registry/v2/ → /v2/
+    backendRefs:
+    - name: docker-registry-gateway
+      port: 80
+  
+  # Registry root access (ヘルスチェック用)
+  - matches:
+    - path:
+        type: Exact
+        value: /registry/
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplaceFullPath
+          replaceFullPath: /  # /registry/ → /
+    backendRefs:
+    - name: docker-registry-gateway
+      port: 80
+---
+# ConfigMap - Registry設定
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-config
+  namespace: docker-registry
+data:
+  config.yml: |
+    version: 0.1
+    log:
+      level: warn
+      formatter: text
+    storage:
+      filesystem:
+        rootdirectory: /var/lib/registry
+      delete:
+        enabled: true
+    http:
+      addr: 0.0.0.0:5000
+      secret: cluster-registry-secret
+      headers:
+        X-Content-Type-Options: [nosniff]
+        Access-Control-Allow-Origin: ['*']
+        Access-Control-Allow-Methods: ['HEAD','GET','OPTIONS','DELETE','POST','PUT']
+        Access-Control-Allow-Headers: ['Authorization','Accept','Cache-Control','Content-Type']
+    health:
+      storagedriver:
+        enabled: true
+        interval: 10s
+        threshold: 3
