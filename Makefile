@@ -1,4 +1,3 @@
-REGISTRY_HOST=registry.local
 APP_NAME=streamlit
 
 .PHONY: create-cluster deploy-keycloak deploy-app deploy-all clean

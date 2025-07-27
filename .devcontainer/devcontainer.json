@@ -13,8 +13,6 @@
   "containerEnv": {
     "KUBECONFIG": "/workspaces/my_k8s/kubeconfig"
   },
-  "runArgs": [
-    "--add-host=host.docker.internal:host-gateway"
-  ],
+  "runArgs": [],
   "remoteUser": "root"
 }
