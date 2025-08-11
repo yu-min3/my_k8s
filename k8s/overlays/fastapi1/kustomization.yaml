@@ -1,0 +1,57 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: default
+
+resources:
+  - ../../base
+
+namePrefix: fastapi1-
+
+# パッチでHTTPRouteのbackendRefsを上書き
+patchesStrategicMerge:
+  - httproute-patch.yaml
+  - app-fastapi-patch.yaml
+
+configMapGenerator:
+  - name: app-config
+    literals:
+      - APP_NAME=fastapi1
+      - HOSTNAME=fastapi1.yu-min.k8s.local
+      - OAUTH2_PROXY_CLIENT_ID=fastapi1
+      - OAUTH2_PROXY_REDIRECT_URL=https://fastapi1.yu-min.k8s.local/oauth2/callback
+      - OAUTH2_PROXY_UPSTREAM=http://fastapi1-app-service.default.svc.cluster.local:80
+      - OAUTH2_PROXY_COOKIE_NAME=_oauth2_fastapi1_app
+      - OAUTH2_PROXY_COOKIE_DOMAIN=fastapi1.yu-min.k8s.local
+
+secretGenerator:
+  - name: oauth2-proxy-secret
+    literals:
+      - client-secret=KFzLJgYIFFJ6VAGZ0NVVvJMMOCdJf8Un
+      - cookie-secret=eb7927d501b8b10e290a6d593a997e89
+
+# ホスト名のみ置換（backendRefsはpatchで処理）
+replacements:
+  - source:
+      kind: ConfigMap
+      name: app-config
+      fieldPath: data.HOSTNAME
+    targets:
+      - select:
+          kind: HTTPRoute
+          name: app-route
+        fieldPaths:
+          - spec.hostnames.0
+
+images:
+  - name: registry.yu-min.k8s.io/streamlit
+    newTag: latest
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: fastapi1
+      app.kubernetes.io/component: web-app
+      app.kubernetes.io/part-of: fastapi-platform
+
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "1"

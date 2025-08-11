@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: streamlit-apps
+  name: apps
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io/background  
@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/yu-min3/my_k8s
     targetRevision: HEAD
-    path: k8s/argocd/streamlit-apps
+    path: k8s/argocd/applications
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

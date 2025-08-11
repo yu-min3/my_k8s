@@ -1,0 +1,15 @@
+[project]
+name = "fastapi-sample"
+version = "1.0.0"
+description = "Sample FastAPI application"
+dependencies = [
+    "fastapi==0.104.1",
+    "uvicorn[standard]==0.24.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = []
