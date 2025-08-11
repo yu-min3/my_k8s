@@ -11,6 +11,7 @@ namePrefix: streamlit1-
 # パッチでHTTPRouteのbackendRefsを上書き
 patchesStrategicMerge:
   - httproute-patch.yaml
+  - app-streamlit-patch.yaml
 
 configMapGenerator:
   - name: app-config
