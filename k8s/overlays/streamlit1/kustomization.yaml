@@ -26,8 +26,8 @@ configMapGenerator:
 secretGenerator:
   - name: oauth2-proxy-secret
     literals:
-      - client-secret=<client-secret>
-      - cookie-secret=<cookie-secret>
+      - client-secret=OiezVYqIqI1WzYEZq2SGxO15FIqGcbhK
+      - cookie-secret=eb7927d501b8b10e290a6d593a997e89
 
 # ホスト名のみ置換（backendRefsはpatchで処理）
 replacements:
