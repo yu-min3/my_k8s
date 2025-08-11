@@ -72,13 +72,15 @@ spec:
   parentRefs:
     - name: shared-gateway
       namespace: default
+      sectionName: https
   hostnames:
-    - "keycloak.local"
+    - "keycloak.yu-min.k8s.local"
   rules:
+    # Keycloak アプリケーション本体
     - matches:
-        - path:
-            type: PathPrefix
-            value: /
+      - path:
+          type: PathPrefix
+          value: / 
       backendRefs:
-        - name: keycloak-service
-          port: 80
+      - name: keycloak-service
+        port: 80

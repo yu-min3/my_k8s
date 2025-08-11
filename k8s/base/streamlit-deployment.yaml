@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streamlit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: streamlit
+  template:
+    metadata:
+      labels:
+        app: streamlit
+    spec:
+      containers:
+      - name: streamlit
+        image: registry.yu-min.k8s.local/streamlit:latest
+        imagePullPolicy: IfNotPresent
+        command: ["streamlit", "run", "/app/app.py"]
+        ports:
+        - containerPort: 8501
+        env:
+        - name: STREAMLIT_SERVER_PORT
+          value: "8501"
+        # アプリ固有の環境変数はoverlaysで追加
+        envFrom:
+        - configMapRef:
+            name: app-config
+            optional: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: streamlit-service
+spec:
+  selector:
+    app: streamlit
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8501

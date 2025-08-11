@@ -97,11 +97,11 @@ spec:
           mountPath: /var/lib/registry
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
             memory: "512Mi"
             cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "2"
         livenessProbe:
           httpGet:
             path: /v2/_catalog
@@ -165,34 +165,13 @@ spec:
   - name: shared-gateway
     namespace: default
   hostnames:
-  - "yu-min.k8s.local"
+  - "registry.yu-min.k8s.local"
   rules:
-  # Registry API v2 エンドポイント
+  # Registry API エンドポイント
   - matches:
     - path:
         type: PathPrefix
-        value: /registry/v2/  # /registry/v2/ で始まるパス
-    filters:
-    - type: URLRewrite
-      urlRewrite:
-        path:
-          type: ReplacePrefixMatch
-          replacePrefixMatch: /v2/  # /registry/v2/ → /v2/
-    backendRefs:
-    - name: docker-registry-gateway
-      port: 80
-  
-  # Registry root access (ヘルスチェック用)
-  - matches:
-    - path:
-        type: Exact
-        value: /registry/
-    filters:
-    - type: URLRewrite
-      urlRewrite:
-        path:
-          type: ReplaceFullPath
-          replaceFullPath: /  # /registry/ → /
+        value: / 
     backendRefs:
     - name: docker-registry-gateway
       port: 80

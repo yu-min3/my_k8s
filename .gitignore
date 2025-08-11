@@ -1,0 +1,9 @@
+archive/*
+.env
+*.env
+mcp-server-kubernetes/*
+CLAUDE.md
+temp.txt
+temp/*
+kubeconfig
+.claude

@@ -1,3 +1,12 @@
+# ClusterIssuer (self-signed証明書発行用)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}
+---
+# GatewayClass
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
 metadata:
@@ -5,6 +14,7 @@ metadata:
 spec:
   controllerName: gateway.envoyproxy.io/gatewayclass-controller
 ---
+# Gateway (HTTP + HTTPS対応)
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -12,9 +22,8 @@ metadata:
   namespace: default
   annotations:
     gateway.envoyproxy.io/service-external-traffic-policy: "Cluster"
-  # annotations:
-  #   cert-manager.io/cluster-issuer: selfsigned
-  #   cert-manager.io/common-name: "Hello World!"
+    cert-manager.io/cluster-issuer: selfsigned
+    cert-manager.io/common-name: "yu-min.k8s.local"
 spec:
   gatewayClassName: envoy-gateway-class
   listeners:
@@ -24,15 +33,15 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
-    # - name: https
-    #   protocol: HTTPS
-    #   hostname: yu-min.k8s.local
-    #   port: 443
-    #   tls:
-    #     mode: Terminate
-    #     certificateRefs:
-    #     - kind: Secret
-    #       name: eg-https
-    #   allowedRoutes:        # ← これを追加！
-    #     namespaces:
-    #       from: All         # ← これが重要！
+    - name: https
+      protocol: HTTPS
+      hostname: "*.yu-min.k8s.local"
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+        - kind: Secret
+          name: eg-https
+      allowedRoutes:
+        namespaces:
+          from: All

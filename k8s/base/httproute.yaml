@@ -1,0 +1,22 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: app-route
+spec:
+  parentRefs:
+  - name: shared-gateway
+    namespace: default
+    sectionName: https
+  hostnames: 
+    - "PLACEHOLDER_HOSTNAME"  # overlaysで置換される
+  rules:
+  - matches:
+    - path: { type: PathPrefix, value: /oauth2/ }
+    backendRefs:
+    - name: oauth2-proxy-service
+      port: 4180
+  - matches:
+    - path: { type: PathPrefix, value: / }
+    backendRefs:
+    - name: oauth2-proxy-service
+      port: 4180

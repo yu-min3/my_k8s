@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: oauth2-proxy
+    spec:
+      volumes:
+      - name: cluster-rootca
+        secret:
+          secretName: eg-https
+      containers:
+      - name: oauth2-proxy
+        image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+        args:
+          # プロバイダー設定
+          - --provider=oidc
+          - --oidc-issuer-url=https://keycloak.yu-min.k8s.local/realms/master
+          - --provider-ca-file=/etc/ssl/certs/cluster/tls.crt
+          
+          # 基本設定
+          - --http-address=0.0.0.0:4180
+          - --scope=openid profile email
+          - --email-domain=*
+          
+          # ヘッダー設定
+          - --set-authorization-header
+          - --pass-access-token
+          - --set-xauthrequest
+          
+          # Cookie設定
+          - --cookie-secure=true
+          - --cookie-samesite=lax
+          - --cookie-path=/
+          
+          # UX設定
+          - --skip-provider-button=true
+          - --code-challenge-method=S256
+          
+          # ログ設定
+          - --standard-logging=true
+          - --request-logging=true
+          - --auth-logging=true
+          
+          # アプリ固有設定（環境変数から読み込み）
+          - --client-id=$(OAUTH2_PROXY_CLIENT_ID)
+          - --client-secret=$(OAUTH2_PROXY_CLIENT_SECRET)
+          - --cookie-secret=$(OAUTH2_PROXY_COOKIE_SECRET)
+          - --redirect-url=$(OAUTH2_PROXY_REDIRECT_URL)
+          - --upstream=$(OAUTH2_PROXY_UPSTREAM)
+          - --cookie-name=$(OAUTH2_PROXY_COOKIE_NAME)
+          - --cookie-domain=$(OAUTH2_PROXY_COOKIE_DOMAIN)
+        
+        ports:
+        - name: http
+          containerPort: 4180
+        
+        volumeMounts:
+        - name: cluster-rootca
+          mountPath: /etc/ssl/certs/cluster
+          readOnly: true
+        
+        env:
+        # Secret参照（機密情報）
+        - name: OAUTH2_PROXY_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy-secret
+              key: client-secret
+        - name: OAUTH2_PROXY_COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy-secret
+              key: cookie-secret
+        
+        # アプリ固有設定（ConfigMapから読み込み）
+        envFrom:
+        - configMapRef:
+            name: app-config
+            optional: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy-service
+spec:
+  selector:
+    app: oauth2-proxy
+  ports:
+  - name: http
+    port: 4180
+    targetPort: http
