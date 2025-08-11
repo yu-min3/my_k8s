@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://your-git-repo.com/streamlit-apps.git
+    repoURL: https://github.com/yu-min3/my_k8s
     targetRevision: HEAD
-    path: argocd/streamlit-apps
+    path: k8s/argocd/applications
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
