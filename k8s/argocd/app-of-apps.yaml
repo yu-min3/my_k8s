@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/yu-min3/my_k8s
     targetRevision: HEAD
-    path: k8s/argocd/applications
+    path: k8s/argocd/streamlit-apps
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
