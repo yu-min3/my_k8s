@@ -20,8 +20,8 @@ configMapGenerator:
       - HOSTNAME=streamlit1.yu-min.k8s.local
       - OAUTH2_PROXY_CLIENT_ID=streamlit1
       - OAUTH2_PROXY_REDIRECT_URL=https://streamlit1.yu-min.k8s.local/oauth2/callback
-      - OAUTH2_PROXY_UPSTREAM=http://streamlit1-streamlit-service.default.svc.cluster.local:80
-      - OAUTH2_PROXY_COOKIE_NAME=_oauth2_streamlit1_unique
+      - OAUTH2_PROXY_UPSTREAM=http://streamlit1-service.default.svc.cluster.local:80
+      - OAUTH2_PROXY_COOKIE_NAME=_oauth2_streamlit1_app
       - OAUTH2_PROXY_COOKIE_DOMAIN=streamlit1.yu-min.k8s.local
 
 secretGenerator:
