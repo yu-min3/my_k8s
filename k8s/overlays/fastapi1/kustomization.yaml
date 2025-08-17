@@ -44,7 +44,7 @@ replacements:
           - spec.hostnames.0
 
 images:
-  - name: registry.yu-min.k8s.io/streamlit
+  - name: registry.yu-min.k8s.io/fastapi
     newTag: latest
 
 labels:
