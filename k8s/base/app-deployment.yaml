@@ -13,7 +13,7 @@ spec:
         app: PLACEHOLDER
     spec:
       containers:
-      - name: PLACEHOLDER
+      - name: app
         image: registry.yu-min.k8s.local/PLACEHOLDER:latest # patchで書き換え予定のため、存在しないイメージで問題ない
         imagePullPolicy: IfNotPresent
         # commandを指定しないことで、デフォルトコマンドが利用される

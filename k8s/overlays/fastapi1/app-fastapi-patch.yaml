@@ -4,7 +4,7 @@ metadata:
   name: app
 spec:
   selector:
-    matchlabels:
+    matchLabels:
       app: fastapi1
   template:
     metadata:
@@ -12,7 +12,7 @@ spec:
         app: fastapi1
     spec:
       containers:
-      - name: fastapi1
+      - name: app
         image: registry.yu-min.k8s.local/fastapi1:latest
         # commandを指定しない → DockerfileのCMDを使用
         ports:
