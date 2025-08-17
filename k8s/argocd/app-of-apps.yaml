@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/yu-min3/my_k8s
-    targetRevision: HEAD
+    targetRevision: main
     path: k8s/argocd/applications
   destination:
     server: https://kubernetes.default.svc

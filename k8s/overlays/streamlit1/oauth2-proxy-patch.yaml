@@ -11,6 +11,9 @@ spec:
     metadata:
       labels:
         app: streamlit1-oauth2-proxy 
+    spec:
+      containers:
+      - name: oauth2-proxy
 ---
 apiVersion: v1
 kind: Service
