@@ -1,3 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streamlit1-oauth2-proxy
+spec:
+  selector:
+    matchLabels:
+      app: streamlit1-oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: streamlit1-oauth2-proxy
+    spec:
+      containers:
+      - name: PLACEHOLDER
+  
 ---
 apiVersion: v1
 kind: Service

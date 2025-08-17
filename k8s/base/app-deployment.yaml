@@ -6,14 +6,14 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: app
+      app: PLACEHOLDER
   template:
     metadata:
       labels:
-        app: app
+        app: PLACEHOLDER
     spec:
       containers:
-      - name: app
+      - name: PLACEHOLDER
         image: registry.yu-min.k8s.local/PLACEHOLDER:latest # patchで書き換え予定のため、存在しないイメージで問題ない
         imagePullPolicy: IfNotPresent
         # commandを指定しないことで、デフォルトコマンドが利用される
