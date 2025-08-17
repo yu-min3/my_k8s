@@ -1,4 +1,17 @@
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  selector:
+    matchLabels:
+      app: fastapi1-oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: fastapi1-oauth2-proxy
+---
 apiVersion: v1
 kind: Service
 metadata:

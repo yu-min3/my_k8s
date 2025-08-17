@@ -17,7 +17,7 @@ spec:
         secret:
           secretName: eg-https
       containers:
-      - name: PLACEHOLDER
+      - name: app
         image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
         args:
           # プロバイダー設定
