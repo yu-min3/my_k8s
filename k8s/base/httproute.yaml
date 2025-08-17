@@ -1,3 +1,4 @@
+# k8s/base/httproute.yaml
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -7,16 +8,16 @@ spec:
   - name: shared-gateway
     namespace: default
     sectionName: https
-  hostnames: 
-    - "PLACEHOLDER_HOSTNAME"  # overlaysで置換される
+  hostnames:
+     - "PLACEHOLDER_HOSTNAME"
   rules:
   - matches:
     - path: { type: PathPrefix, value: /oauth2/ }
     backendRefs:
-    - name: oauth2-proxy-service
+    - name: PLACEHOLDER_OAUTH2_SERVICE  # ← より明確な名前
       port: 4180
   - matches:
     - path: { type: PathPrefix, value: / }
     backendRefs:
-    - name: oauth2-proxy-service
+    - name: PLACEHOLDER_OAUTH2_SERVICE  # ← より明確な名前
       port: 4180

@@ -18,7 +18,7 @@ spec:
         imagePullPolicy: IfNotPresent
         # commandを指定しないことで、デフォルトコマンドが利用される
         ports:
-        - containerPort: 8000  # デフォルト、overlaysでパッチ可能
+        - containerPort: 8000 # デフォルト。overlaysでreplace
         env:
         - name: APP_ENV
           value: "production"
@@ -38,4 +38,4 @@ spec:
   ports:
   - name: http
     port: 80
-    targetPort: 8000  # デフォルト、overlaysでパッチ可能
+    targetPort: 8000 # デフォルト。overlaysでreplace

@@ -8,10 +8,8 @@ resources:
 
 namePrefix: streamlit1-
 
-# パッチでHTTPRouteのbackendRefsを上書き
-patchesStrategicMerge:
-  - httproute-patch.yaml
-  - app-streamlit-patch.yaml
+patches:
+  - path: app-port-patch.yaml
 
 configMapGenerator:
   - name: app-config
@@ -23,15 +21,20 @@ configMapGenerator:
       - OAUTH2_PROXY_UPSTREAM=http://streamlit1-app-service.default.svc.cluster.local:80
       - OAUTH2_PROXY_COOKIE_NAME=_oauth2_streamlit1_app
       - OAUTH2_PROXY_COOKIE_DOMAIN=streamlit1.yu-min.k8s.local
+      # Replacement用の値
+      - APP_SELECTOR=streamlit1
+      - OAUTH2_SELECTOR=streamlit1-oauth2-proxy
+      - APP_IMAGE=registry.yu-min.k8s.local/streamlit1:latest
+      - OAUTH2_SERVICE_NAME=streamlit1-oauth2-proxy-service  # 追加
 
 secretGenerator:
   - name: oauth2-proxy-secret
-    literals:
-      - client-secret=OiezVYqIqI1WzYEZq2SGxO15FIqGcbhK
-      - cookie-secret=eb7927d501b8b10e290a6d593a997e89
+    envs:
+      - secrets.env  # 環境変数ファイル参照
 
-# ホスト名のみ置換（backendRefsはpatchで処理）
+# 全ての PLACEHOLDER を置換
 replacements:
+  # HTTPRoute のホスト名を置換
   - source:
       kind: ConfigMap
       name: app-config
@@ -43,15 +46,87 @@ replacements:
         fieldPaths:
           - spec.hostnames.0
 
-images:
-  - name: registry.yu-min.k8s.io/streamlit
-    newTag: latest
+  # HTTPRoute の OAuth2プロキシ backendRefs を置換
+  - source:
+      kind: ConfigMap
+      name: app-config
+      fieldPath: data.OAUTH2_SERVICE_NAME
+    targets:
+      - select:
+          kind: HTTPRoute
+          name: app-route
+        fieldPaths:
+          - spec.rules.0.backendRefs.0.name  # /oauth2/ path
+          - spec.rules.1.backendRefs.0.name  # / path
+
+  # アプリケーション Deployment のセレクターとラベルを置換
+  - source:
+      kind: ConfigMap
+      name: app-config
+      fieldPath: data.APP_SELECTOR
+    targets:
+      - select:
+          kind: Deployment
+          name: app
+        fieldPaths:
+          - spec.selector.matchLabels.app
+          - spec.template.metadata.labels.app
+
+  # アプリケーション Deployment のイメージを置換
+  - source:
+      kind: ConfigMap
+      name: app-config
+      fieldPath: data.APP_IMAGE
+    targets:
+      - select:
+          kind: Deployment
+          name: app
+        fieldPaths:
+          - spec.template.spec.containers.0.image
+
+
+  # アプリケーション Service のセレクターを置換
+  - source:
+      kind: ConfigMap
+      name: app-config
+      fieldPath: data.APP_SELECTOR
+    targets:
+      - select:
+          kind: Service
+          name: app-service
+        fieldPaths:
+          - spec.selector.app
+
+  # OAuth2プロキシ Deployment のセレクターとラベルを置換
+  - source:
+      kind: ConfigMap
+      name: app-config
+      fieldPath: data.OAUTH2_SELECTOR
+    targets:
+      - select:
+          kind: Deployment
+          name: oauth2-proxy
+        fieldPaths:
+          - spec.selector.matchLabels.app
+          - spec.template.metadata.labels.app
+
+  # OAuth2プロキシ Service のセレクターを置換
+  - source:
+      kind: ConfigMap
+      name: app-config
+      fieldPath: data.OAUTH2_SELECTOR
+    targets:
+      - select:
+          kind: Service
+          name: oauth2-proxy-service
+        fieldPaths:
+          - spec.selector.app
 
 labels:
   - pairs:
       app.kubernetes.io/name: streamlit1
       app.kubernetes.io/component: web-app
-      app.kubernetes.io/part-of: streamlit-platform
+      app.kubernetes.io/part-of: fastapi-platform
 
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "1"
