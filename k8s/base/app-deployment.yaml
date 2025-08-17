@@ -34,7 +34,7 @@ metadata:
   name: app-service
 spec:
   selector:
-    app: app
+    app: PLACEHOLDER
   ports:
   - name: http
     port: 80
