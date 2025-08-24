@@ -5,11 +5,13 @@ namespace: default
 
 resources:
   - ../../base
+  - sealed-secret.yaml  # Sealed Secretファイルを追加
 
 namePrefix: streamlit1-
 
 patches:
   - path: app-port-patch.yaml
+  - path: oauth2-secret-patch.yaml
 
 configMapGenerator:
   - name: app-config
@@ -25,12 +27,7 @@ configMapGenerator:
       - APP_SELECTOR=streamlit1
       - OAUTH2_SELECTOR=streamlit1-oauth2-proxy
       - APP_IMAGE=registry.yu-min.k8s.local/streamlit1:latest
-      - OAUTH2_SERVICE_NAME=streamlit1-oauth2-proxy-service  # 追加
-
-secretGenerator:
-  - name: oauth2-proxy-secret
-    envs:
-      - secrets.env  # 環境変数ファイル参照
+      - OAUTH2_SERVICE_NAME=streamlit1-oauth2-proxy-service
 
 # 全ての PLACEHOLDER を置換
 replacements:
@@ -84,7 +81,6 @@ replacements:
         fieldPaths:
           - spec.template.spec.containers.0.image
 
-
   # アプリケーション Service のセレクターを置換
   - source:
       kind: ConfigMap
@@ -126,7 +122,7 @@ labels:
   - pairs:
       app.kubernetes.io/name: streamlit1
       app.kubernetes.io/component: web-app
-      app.kubernetes.io/part-of: fastapi-platform
+      app.kubernetes.io/part-of: streamlit-platform
 
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "1"

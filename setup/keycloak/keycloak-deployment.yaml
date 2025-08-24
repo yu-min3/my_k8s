@@ -3,6 +3,36 @@ kind: Namespace
 metadata:
   name: keycloak
 ---
+# PersistentVolumeを手動作成
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: keycloak-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /mnt/keycloak-data
+    type: DirectoryOrCreate
+---
+# PersistentVolumeClaimを追加
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: keycloak-data-pvc
+  namespace: keycloak
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 5Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,6 +50,31 @@ spec:
       labels:
         app: keycloak
     spec:
+    spec:
+      # Master ノードを指定
+      nodeSelector:
+        kubernetes.io/hostname: "worker1"  # または実際のmaster node名
+      # initContainer でディレクトリ権限を修正
+      initContainers:
+      - name: fix-permissions
+        image: busybox:1.35
+        command: ['sh', '-c']
+        args:
+        - |
+          echo "Creating and setting permissions for /opt/keycloak/data"
+          mkdir -p /opt/keycloak/data
+          chown -R 1000:1000 /opt/keycloak/data
+          chmod -R 755 /opt/keycloak/data
+          ls -la /opt/keycloak/data
+          echo "Permissions fixed!"
+        volumeMounts:
+        - name: keycloak-data
+          mountPath: /opt/keycloak/data
+        securityContext:
+          runAsUser: 0  # root で権限修正
+      # Pod レベルで securityContext を設定
+      securityContext:
+        fsGroup: 1000
       containers:
       - name: keycloak
         image: quay.io/keycloak/keycloak:23.0
@@ -34,6 +89,10 @@ spec:
         ports:
         - name: http
           containerPort: 8080
+        # volumeMountsを追加
+        volumeMounts:
+        - name: keycloak-data
+          mountPath: /opt/keycloak/data
         readinessProbe:
           httpGet:
             path: /realms/master
@@ -46,6 +105,11 @@ spec:
             port: 8080
           initialDelaySeconds: 60
           periodSeconds: 10
+      # volumesを追加
+      volumes:
+      - name: keycloak-data
+        persistentVolumeClaim:
+          claimName: keycloak-data-pvc
 ---
 apiVersion: v1
 kind: Service

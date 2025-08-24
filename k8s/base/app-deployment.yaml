@@ -14,14 +14,12 @@ spec:
     spec:
       containers:
       - name: app
-        image: registry.yu-min.k8s.local/PLACEHOLDER:latest # patchで書き換え予定のため、存在しないイメージで問題ない
+        image: registry.yu-min.k8s.local/PLACEHOLDER:latest # patchで書き換え
         imagePullPolicy: IfNotPresent
         # commandを指定しないことで、デフォルトコマンドが利用される
         ports:
         - containerPort: 8000 # デフォルト。overlaysでreplace
         env:
-        - name: APP_ENV
-          value: "production"
         # アプリ固有の環境変数はoverlaysで追加
         envFrom:
         - configMapRef:
